@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>مزاد شركة اوبتمايزا</title>
+  <style>
+    :root{--bg:#0f172a;--card:#111827;--muted:#94a3b8;--text:#e5e7eb;--accent:#22d3ee;--good:#86efac;--bad:#fecaca}
+    *{box-sizing:border-box}
+    body{font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial; background:#0b1220; color:var(--text); margin:0; padding:0; direction:rtl}
+    .container{max-width:980px;margin:32px auto;padding:0 16px}
+    .card{background:#111827;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:20px;margin-bottom:18px}
+    h1{margin:0 0 6px}
+    h2{margin:0 0 10px}
+    p.muted, .muted{color:var(--muted);font-size:14px}
+    label{display:block;margin:10px 0 6px;font-weight:600}
+    input,select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #334155;background:#0b1020;color:#fff}
+    button{border:0;border-radius:10px;padding:10px 14px;background:linear-gradient(90deg,#22c55e,#22d3ee);color:#041016;font-weight:700;cursor:pointer}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    .row{display:grid;grid-template-columns:1fr;gap:12px}
+    @media(min-width:720px){.row.two{grid-template-columns:1fr 1fr}}
+    .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#052a1a;border:1px solid #166534;color:var(--good);font-weight:700}
+    .bid{padding:10px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:#0b1020}
+    #countdown{font-weight:700;color:#facc15;margin-top:8px}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,.08);text-align:right; font-size:14px}
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:rgba(34,211,238,0.12);border:1px solid rgba(34,211,238,.35);color:#a5f3fc;font-weight:700;font-size:12px}
+    .ok{background:#052a1a;border-color:#166534;color:#86efac}
+    .err{background:#2a0b0b;border-color:#7f1d1d;color:#fecaca}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="badge">Live Auction</div>
+      <h1>يسر شركة اوتبتمايزا افتتاح المزاد العلني لموظفين الشركة</h1>
+      <p>Smart Apple Watch Series 10<br>بحيث سيتم التبرع بالمبلغ لمبادرة الشركة الخيرية <strong>Give 12</strong></p>
+      <div id="countdown">—</div>
+      <p class="muted">ملاحظة: العدّاد يتثبّت لأول زيارة على هذا المتصفح ويغلق المزايدة محليًا عند انتهاء الوقت.</p>
+    </div>
+
+    <div class="card">
+      <h2>نموذج المزايدة</h2>
+      <form id="bid-form" novalidate>
+        <div class="row two">
+          <div>
+            <label for="name">الاسم</label>
+            <input id="name" name="name" required>
+          </div>
+          <div>
+            <label for="email">البريد الإلكتروني</label>
+            <input id="email" name="email" type="email" required>
+          </div>
+        </div>
+        <div class="row two">
+          <div>
+            <label for="amount">قيمة المزايدة</label>
+            <input id="amount" name="amount" type="number" step="0.01" min="0.01" required>
+          </div>
+          <div>
+            <label for="currency">العملة</label>
+            <select id="currency" name="currency">
+              <option value="JOD">دينار أردني</option>
+              <option value="USD">دولار</option>
+              <option value="EUR">يورو</option>
+            </select>
+          </div>
+        </div>
+        <label for="note">ملاحظة (اختياري)</label>
+        <input id="note" name="note">
+        <div class="toolbar">
+          <button type="submit" id="submitBtn">تقديم المزايدة</button>
+          <span id="integrityBadge" class="badge">Integrity: —</span>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>آخر مزايدة</h2>
+      <div id="last-bid" class="muted">لا يوجد مزايدات بعد.</div>
+    </div>
+
+    <div class="card">
+      <h2>سجل المزايدات (على هذا المتصفح)</h2>
+      <div class="toolbar">
+        <button id="exportJson">تصدير JSON</button>
+        <button id="exportCsv">تصدير CSV</button>
+      </div>
+      <div id="logCount" class="muted" style="margin-top:6px">—</div>
+      <div style="overflow:auto">
+        <table id="logTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>الاسم</th>
+              <th>الإيميل</th>
+              <th>القيمة</th>
+              <th>العملة</th>
+              <th>الملاحظة</th>
+              <th>الوقت</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="muted">لزيادة الأمان الحقيقي ومنع التلاعب، يُنصح بحفظ السجل على خادوم مركزي. النسخة الحالية تحفظ محليًا وتستخدم سلسلة تجزئة للتحقق من سلامة السجل على هذا الجهاز فقط.</p>
+    </div>
+  </div>
+
+  <script>
+  // إعدادات عامة (لا يوجد إرسال بريد)
+  const ITEM_NAME = 'Smart Apple Watch Series 10';
+  const STORAGE_KEY = 'auction_bids_log_v1';
+  const DEADLINE_KEY = 'auction_deadline';
+  const GENESIS = 'GENESIS';
+
+  const form = document.getElementById('bid-form');
+  const lastBidBox = document.getElementById('last-bid');
+  const logTableBody = document.querySelector('#logTable tbody');
+  const logCount = document.getElementById('logCount');
+  const integrityBadge = document.getElementById('integrityBadge');
+  const submitBtn = document.getElementById('submitBtn');
+
+  // العدّاد: 3 أيام من أول زيارة على هذا المتصفح
+  let deadlineISO = localStorage.getItem(DEADLINE_KEY);
+  if (!deadlineISO){
+    const d = new Date(); d.setDate(d.getDate()+3); deadlineISO = d.toISOString();
+    localStorage.setItem(DEADLINE_KEY, deadlineISO);
+  }
+  const deadline = new Date(deadlineISO);
+  const countdownEl = document.getElementById('countdown');
+  function updateCountdown(){
+    const now = new Date();
+    const diff = deadline - now;
+    if (diff <= 0){
+      countdownEl.textContent = 'انتهى وقت المزاد';
+      if (submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'أُغلق المزاد'; }
+      return;
+    }
+    const s = Math.floor(diff/1000);
+    const days = Math.floor(s/86400);
+    const hours = Math.floor((s%86400)/3600);
+    const minutes = Math.floor((s%3600)/60);
+    const seconds = s%60;
+    countdownEl.textContent = `الوقت المتبقي: ${days} يوم ${hours} ساعة ${minutes} دقيقة ${seconds} ثانية`;
+  }
+  setInterval(updateCountdown, 1000); updateCountdown();
+
+  // أدوات مساعدة
+  function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',''':'&#39;'}[c]));}
+  function fmtCurrency(amount,currency){
+    try{ return new Intl.NumberFormat('ar', {style:'currency', currency}).format(Number(amount)); }
+    catch{ return `${Number(amount).toFixed(2)} ${currency}`; }
+  }
+  async function sha256(str){
+    const enc = new TextEncoder().encode(str);
+    const buf = await crypto.subtle.digest('SHA-256', enc);
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+
+  function loadLog(){
+    try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch{ return []; }
+  }
+  function saveLog(list){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+
+  async function appendBidToLog(bid){
+    const list = loadLog();
+    const prevHash = list.length ? list[list.length-1].hash : GENESIS;
+    const core = {name: bid.name, email: bid.email, amount: bid.amount, currency: bid.currency, note: bid.note, time: bid.time, prevHash};
+    const hash = await sha256(JSON.stringify(core));
+    list.push({...core, hash});
+    saveLog(list);
+    return list;
+  }
+
+  async function verifyLogIntegrity(){
+    const list = loadLog();
+    let ok = true; let prev = GENESIS;
+    for (const entry of list){
+      const core = {name: entry.name, email: entry.email, amount: entry.amount, currency: entry.currency, note: entry.note, time: entry.time, prevHash: prev};
+      const h = await sha256(JSON.stringify(core));
+      if (h !== entry.hash){ ok = false; break; }
+      prev = entry.hash;
+    }
+    return ok;
+  }
+
+  function renderTable(list){
+    logTableBody.innerHTML = list.map((e,i)=>`<tr>
+      <td>${i+1}</td>
+      <td>${escapeHtml(e.name)}</td>
+      <td>${escapeHtml(e.email)}</td>
+      <td>${escapeHtml(Number(e.amount).toFixed(2))}</td>
+      <td>${escapeHtml(e.currency)}</td>
+      <td>${escapeHtml(e.note||'')}</td>
+      <td><span class="muted">${escapeHtml(e.time)}</span></td>
+    </tr>`).join('');
+    logCount.textContent = `إجمالي المزايدات المسجلة على هذا المتصفح: ${list.length}`;
+  }
+
+  function renderLast(list){
+    const last = [...list].slice(-1)[0];
+    lastBidBox.innerHTML = last ? (
+      `<div class="bid">
+        <strong>${escapeHtml(last.name)}</strong> <span class="muted">(${escapeHtml(last.email)})</span><br>
+        <span class="pill">${fmtCurrency(last.amount,last.currency)}</span><br>
+        <small class="muted">${escapeHtml(last.note||'')}</small><br>
+        <small class="muted">${escapeHtml(last.time)}</small>
+      </div>`
+    ) : '<span class="muted">لا يوجد مزايدات بعد.</span>';
+  }
+
+  async function renderAll(){
+    const list = loadLog();
+    const ok = await verifyLogIntegrity();
+    integrityBadge.textContent = ok ? 'Integrity: OK' : 'Integrity: CORRUPTED';
+    integrityBadge.className = 'badge ' + (ok ? 'ok' : 'err');
+    renderTable(list); renderLast(list);
+  }
+
+  // عرض أولي
+  renderAll();
+
+  form.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    if (submitBtn.disabled) return;
+    const name = form.name.value.trim();
+    const email = form.email.value.trim();
+    const amount = Number(form.amount.value);
+    const currency = form.currency.value;
+    const note = form.note.value.trim();
+
+    if (!name || !email || !amount || amount <= 0){
+      alert('يرجى تعبئة الاسم والبريد وقيمة مزايدة صحيحة');
+      return;
+    }
+    if (new Date() >= deadline){
+      submitBtn.disabled = true; submitBtn.textContent = 'أُغلق المزاد';
+      alert('انتهى وقت المزاد. لا يمكن قبول مزايدات جديدة.');
+      return;
+    }
+
+    const bid = {name,email,amount: amount.toFixed(2),currency,note,time: new Date().toLocaleString('ar-JO')};
+    submitBtn.disabled = true; const oldTxt = submitBtn.textContent; submitBtn.textContent = 'جارٍ الحفظ...';
+    try{
+      const list = await appendBidToLog(bid);
+      renderTable(list); renderLast(list); await renderAll();
+      form.reset();
+    }catch(err){ console.error(err); alert('حصل خطأ غير متوقع'); }
+    finally{ submitBtn.disabled = false; submitBtn.textContent = oldTxt; }
+  });
+
+  // تصدير السجل
+  document.getElementById('exportJson').addEventListener('click', ()=>{
+    const data = JSON.stringify(loadLog(), null, 2);
+    downloadFile(data, 'auction-log.json', 'application/json');
+  });
+  document.getElementById('exportCsv').addEventListener('click', ()=>{
+    const rows = [['#','name','email','amount','currency','note','time']];
+    const list = loadLog();
+    list.forEach((e,i)=> rows.push([i+1,e.name,e.email,e.amount,e.currency,(e.note||''),e.time]));
+    const csv = rows.map(r=> r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',')).join('\n');
+    downloadFile(csv, 'auction-log.csv', 'text/csv');
+  });
+    const rows = [['#','name','email','amount','currency','note','time']];
+    const list = loadLog();
+    list.forEach((e,i)=> rows.push([i+1,e.name,e.email,e.amount,e.currency,(e.note||''),e.time]));
+    const csv = rows.map(r=> r.map(v=>f'"{str(v).replace(""","""")}"' if False else ""{}"".format(str(v).replace('"','""'))).join(',')).join('\n')  # placeholder
+  });
+  function downloadFile(content, filename, type){
+    const blob = new Blob([content], {type});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+    URL.revokeObjectURL(a.href);
+  }
+  </script>
+</body>
+</html>
